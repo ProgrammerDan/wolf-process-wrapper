@@ -5,29 +5,30 @@ This is a simple process wrapper to allow other languages to compete in the [Wol
 
 Specification
 ====
-The protocol will be via STDIN and STDOUT hooks, and is split into initialization, Move, and Attack. In each case communication with your process will be via STDIN, and a reply is necessary from STDOUT. If a reply is not received in 1 second, your process will be assumed to be dead and an exception will be thrown. All characters will be encoded in UTF-8, for consistency.
+The protocol will be via STDIN and STDOUT hooks, and is split into initialization, Move, and Attack. In each case communication with your process will be via STDIN, and a reply is necessary from STDOUT. If a reply is not received in 1 second, your process will be assumed to be dead and an exception will be thrown. All characters will be encoded in UTF-8, for consistency. Every input will terminate with a newline character, and your process should terminate every output reply with a newline as well.
 
 Note that only a single process will be created, all Wolves must be managed within that one process. Read on for how this spec will help.
 
 ###Initialization
 
-**STDIN**: `S<id>$<ndigits>$<mapsize>`
+**STDIN**: `S<id><mapsize>`\n
 
-**STDOUT**: `K<id>`
+**STDOUT**: `K<id>`\n
 
 **`<id>`**: `00` or `01` or ... or `99`
 
 ####Explanation:
 
-The character `S` will be sent followed by two numeric characters `00`, `01`, ..., `99` indicating which of the 100 wolves is being initialized. In all future communication with that specific wolf, the same `<id>` will be used. After the `$` character, a variable size sequence of numeric characters will be sent, indicating how many digits are in the map size. The end of `<ndigits>` is indicated by the `$` character. What follows is a sequence of `<ndigits>` numeric characterswhich is the `<mapsize>`, the total # of cells in the map (see the original post for details).
+The character `S` will be sent followed by two numeric characters `00`, `01`, ..., `99` indicating which of the 100 wolves is being initialized. In all future communication with that specific wolf, the same `<id>` will be used.
+After that a sequence of numeric characters which together represent the `<mapsize>` will be sent. You know the `<mapsize>` digit sequence is done when the input terminator newline is received.
 
 To ensure your process is alive, you must reply with the character `K` followed by the same `<id>` you received. Any other reply will result in an exception, killing your wolf.
 
 ###Movement
 
-**STDIN**: `M<id><C0><C1>...<C7><C8>`
+**STDIN**: `M<id><C0><C1>...<C7><C8>`\n
 
-**STDOUT**: `<mv><id>`
+**STDOUT**: `<mv><id>`\n
 
 **`<Cn>`**: `W` or ` ` or `B` or `S` or `L`
 
@@ -61,9 +62,9 @@ Reply with one of the valid movement characters `<mv>`, followed by the Wolf's t
 
 ###Attack
 
-**STDIN**: `A<id><C>`
+**STDIN**: `A<id><C>`\n
 
-**STDOUT**: `<atk><id>`
+**STDOUT**: `<atk><id>`\n
 
 **`<C>`**: `W` or `B` or `S` or `L`
 
