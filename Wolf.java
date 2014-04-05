@@ -64,7 +64,7 @@ public class Wolf<custom-name> extends Animal {
 			Wolf<custom-name>.wolfProcess.start();
 		}
 
-		if (Wolf<custom-name>.wolfProcess.initWolf(Wolf<custom-name>.nWolves)) {
+		if (Wolf<custom-name>.wolfProcess.initWolf(Wolf<custom-name>.nWolves, MAP_SIZE)) {
 			this.id = Wolf<custom-name>.nWolves;
 			this.isDead = false;
 			Wolf<custom-name>.wolves[id] = this;
@@ -194,7 +194,7 @@ public class Wolf<custom-name> extends Animal {
 		/**
 		 * Sends an initialization command to the remote process
 		 */
-		public synchronized boolean initWolf(int wolf) {
+		public synchronized boolean initWolf(int wolf, int map_sz) {
 			while(writer == null){
 				try {
 				this.sleep(0);
@@ -202,7 +202,7 @@ public class Wolf<custom-name> extends Animal {
 			}
 			boolean success = false;
 			try{
-				writer.printf("S%02d\n", wolf);
+				writer.printf("S%02d%d\n", wolf, map_sz);
 				writer.flush();
 				String reply = getReply(5000l);
 				if (reply != null && reply.length() >= 3 && reply.charAt(0) == 'K') {

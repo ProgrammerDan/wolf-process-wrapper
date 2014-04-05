@@ -15,7 +15,7 @@ Note that only a single process will be created, all Wolves must be managed with
 
 ###Initialization
 
-**STDIN:** `S<id>`\n
+**STDIN:** `S<id><mapsize>`\n
 
 **STDOUT:** `K<id>`\n
 
@@ -24,6 +24,8 @@ Note that only a single process will be created, all Wolves must be managed with
 ####Explanation:
 
 The character `S` will be sent followed by two numeric characters `00`, `01`, ..., `99` indicating which of the 100 wolves is being initialized. In all future communication with that specific wolf, the same `<id>` will be used.
+
+Following the ID, a variable length sequence of numeric characters will be be sent. This is the size of the map. You'll know the sequence of numeric characters is over when you reach the newline (`\n`). 
 
 To ensure your process is alive, you must reply with the character `K` followed by the same `<id>` you received. Any other reply will result in an exception, killing your wolves.
 
