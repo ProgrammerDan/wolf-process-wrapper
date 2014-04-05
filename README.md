@@ -11,7 +11,7 @@ Note that only a single process will be created, all Wolves must be managed with
 
 ###Initialization
 
-**STDIN**: `S<id><mapsize>`\n
+**STDIN**: `S<id>`\n
 
 **STDOUT**: `K<id>`\n
 
@@ -20,7 +20,6 @@ Note that only a single process will be created, all Wolves must be managed with
 ####Explanation:
 
 The character `S` will be sent followed by two numeric characters `00`, `01`, ..., `99` indicating which of the 100 wolves is being initialized. In all future communication with that specific wolf, the same `<id>` will be used.
-After that a sequence of numeric characters which together represent the `<mapsize>` will be sent. You know the `<mapsize>` digit sequence is done when the input terminator newline is received.
 
 To ensure your process is alive, you must reply with the character `K` followed by the same `<id>` you received. Any other reply will result in an exception, killing your wolf.
 
@@ -89,11 +88,17 @@ And that's it. There's no more to it. If you lose an attack, that `<id>` will ne
 Conclusion
 ====
 
-In this repository you'll find a single .java file. Search and replace the following strings to set up your bot:
+Note that any exceptions will kill all the Wolves of your remote type, as only a simple "Process" is constructed of your remote wolf, for all wolves of your type that get created.
+
+In this repository you'll find the `Wolf.java` file. Search and replace the following strings to set up your bot:
 
 Replace `<invocation>` with the command line argument that will properly execute your process.
 
+By example, replace `<invocation>` with `Python PythonWolf.py` to execute my Python 3+ example remote wolf.
+
 Replace `<custom-name>` with a unique name for your Wolf.
+
+For example, I have `WolfRandomPython.java` that invokes my example remote, the `PythonWolf.py`
 
 Rename the file to be `Wolf<custom-name>.java`, where `<custom-name>` is replaced with the name you chose above.
 
