@@ -14,17 +14,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Remote Wolf<custom-name> wrapper class. 
+ * Remote WolfRandomPython wrapper class. 
  */
-public class Wolf<custom-name> extends Animal {
+public class WolfRandomPython extends Animal {
 	/**
 	 * Simple test script that sends some typical commands to the
 	 * remote process.
 	 */
 	public static void main(String[]args){
-		Wolf<custom-name>[] wolves = new Wolf<custom-name>[100];
+		WolfRandomPython[] wolves = new WolfRandomPython[100];
 		for(int i=0; i<10; i++) {
-			wolves[i] = new Wolf<custom-name>();
+			wolves[i] = new WolfRandomPython();
 		}
 		char map[][] = new char[3][3];
 		for (int i=0;i<9;i++)
@@ -44,7 +44,7 @@ public class Wolf<custom-name> extends Animal {
 	}
 	private static WolfProcess wolfProcess = null;
 
-	private static Wolf<custom-name>[] wolves = new Wolf<custom-name>[100];
+	private static WolfRandomPython[] wolves = new WolfRandomPython[100];
 	private static int nWolves = 0;
 
 	private boolean isDead;
@@ -57,22 +57,22 @@ public class Wolf<custom-name> extends Animal {
 	 * maintained alongside the primary process.
 	 * Note this implementation makes heavy use of threads.
 	 */
-	public Wolf<custom-name>() {
+	public WolfRandomPython() {
 		super('W');
-		if (Wolf<custom-name>.wolfProcess == null) {
-			Wolf<custom-name>.wolfProcess = new WolfProcess();
-			Wolf<custom-name>.wolfProcess.start();
+		if (WolfRandomPython.wolfProcess == null) {
+			WolfRandomPython.wolfProcess = new WolfProcess();
+			WolfRandomPython.wolfProcess.start();
 		}
 
-		if (Wolf<custom-name>.wolfProcess.initWolf(Wolf<custom-name>.nWolves)) {
-			this.id = Wolf<custom-name>.nWolves;
+		if (WolfRandomPython.wolfProcess.initWolf(WolfRandomPython.nWolves)) {
+			this.id = WolfRandomPython.nWolves;
 			this.isDead = false;
-			Wolf<custom-name>.wolves[id] = this;
+			WolfRandomPython.wolves[id] = this;
 		} else {
-			Wolf<custom-name>.wolfProcess.endProcess();
+			WolfRandomPython.wolfProcess.endProcess();
 			this.isDead = true;
 		}
-		Wolf<custom-name>.nWolves++;
+		WolfRandomPython.nWolves++;
 	}
 
 	/**
@@ -82,11 +82,11 @@ public class Wolf<custom-name> extends Animal {
 	 */
 	@Override
 	public Attack fight(char opponent) {
-		if (!Wolf<custom-name>.wolfProcess.getRunning() || isDead) {
+		if (!WolfRandomPython.wolfProcess.getRunning() || isDead) {
 			return Attack.SUICIDE;
 		}
 		try {
-			Attack atk = Wolf<custom-name>.wolfProcess.fight(id, opponent);
+			Attack atk = WolfRandomPython.wolfProcess.fight(id, opponent);
 
 			if (atk == Attack.SUICIDE) {
 				this.isDead = true;
@@ -106,11 +106,11 @@ public class Wolf<custom-name> extends Animal {
 	 */
 	@Override
 	public Move move() {
-		if (!Wolf<custom-name>.wolfProcess.getRunning() || isDead) {
+		if (!WolfRandomPython.wolfProcess.getRunning() || isDead) {
 			return Move.HOLD;
 		}
 		try {
-			Move mv = Wolf<custom-name>.wolfProcess.move(id, surroundings);
+			Move mv = WolfRandomPython.wolfProcess.move(id, surroundings);
 
 			return mv;
 		} catch (Exception e) {
@@ -153,7 +153,7 @@ public class Wolf<custom-name> extends Animal {
 		public void run() {
 			try {
 				System.out.println("Starting Wolf<custom-name> remote process");
-				ProcessBuilder pb = new ProcessBuilder("<invocation>".split(" "));
+				ProcessBuilder pb = new ProcessBuilder("python PythonWolf.py".split(" "));
 				pb.redirectErrorStream(true);
 				process = pb.start();
 				System.out.println("Wolf<custom-name> process begun");
