@@ -1,11 +1,23 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+
 public class Wolf extends Animal {
 	private static WolfProcess wolfProcess = null;
 
-	private static Wolf[] wolves = new Wolf[];
+	private static Wolf[] wolves = new Wolf[100];
 	private static int nWolves = 0;
 	public static int MAP_SIZE = 100;
 
-	private static boolean allDead = false;
 
 	private boolean isDead;
 	private int id;
@@ -22,18 +34,18 @@ public class Wolf extends Animal {
 			this.isDead = false;
 			Wolf.wolves[nWolves++] = this;
 		} else {
-			Wolf.allDead = true;
+			Wolf.wolfProcess.endProcess();
 			this.isDead = true;
 		}
 	}
 
 	@Override
 	public Attack fight(char opponent) {
-		if (Wolf.allDead || !Wolf.wolfProcess.getRunning() || isDead) {
+		if (!Wolf.wolfProcess.getRunning() || isDead) {
 			return Attack.SUICIDE;
 		}
 		try {
-			Attack atk = wolfProcess.fight(id, opponent)
+			Attack atk = Wolf.wolfProcess.fight(id, opponent);
 
 			if (atk == Attack.SUICIDE) {
 				this.isDead = true;
@@ -41,7 +53,7 @@ public class Wolf extends Animal {
 
 			return atk;
 		} catch (Exception e) {
-			String.out.printf("Something terrible happened, this wolf has died: %s", e.getMessage());
+			System.out.printf("Something terrible happened, this wolf has died: %s", e.getMessage());
 			isDead = true;
 			return Attack.SUICIDE;
 		}
@@ -49,15 +61,15 @@ public class Wolf extends Animal {
 
 	@Override
 	public Move move() {
-		if (Wolf.allDead || !Wolf.wolfProcess.getRunning() || isDead) {
+		if (!Wolf.wolfProcess.getRunning() || isDead) {
 			return Move.HOLD;
 		}
 		try {
-			Move mv = wolfProcess.move(id, surroundings);
+			Move mv = Wolf.wolfProcess.move(id, surroundings);
 
 			return mv;
 		} catch (Exception e) {
-			String.out.printf("Something terrible happened, this wolf has died: %s", e.getMessage());
+			System.out.printf("Something terrible happened, this wolf has died: %s", e.getMessage());
 			isDead = true;
 			return Move.HOLD;
 		}
@@ -67,6 +79,7 @@ public class Wolf extends Animal {
 		private Process process;
 		private BufferedReader reader;
 		private PrintWriter writer;
+		private ExecutorService executor;
 		private boolean running;
 		public boolean getRunning() {
 			return running;
@@ -76,6 +89,7 @@ public class Wolf extends Animal {
 			reader = null;
 			writer = null;
 			running = true;
+			executor = Executors.newFixedThreadPool(1);
 		}
 
 		public void endProcess() {
@@ -91,52 +105,58 @@ public class Wolf extends Animal {
 				// STDIN of the process.
 				writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), "UTF-8"));
 				while(running){
-					this.sleep();
+					this.sleep(0);
 				}
 				reader.close();
 				writer.close();
 				process.destroy(); // kill it with fire.
+				executor.shutdownNow();
 			} catch (Exception e) {
 				System.out.println("Wolf<custom-name> ended catastrophically.");
 			}
 		}
 
+		private String getReply() throws TimeoutException, ExecutionException, InterruptedException{
+			Callable<String> readTask = new Callable<String>() {
+				@Override
+				public String call() throws Exception {
+					return reader.readLine();
+				}
+			};
+
+			Future<String> future = executor.submit(readTask);
+			return future.get(1000l, TimeUnit.MILLISECONDS);
+		}
+
 		public synchronized boolean initWolf(int wolf, int mapsize) {
 			boolean success = false;
 			try{
-				WolfTimeout timeout = new WolfTimeout();
-				timeout.setInterrupt(this);
-				timeout.start();
 				writer.printf("S%02d%d\n", wolf, mapsize);
 				writer.flush();
-				String reply = reader.readLine();
-				if (reply.length >= 3 && reply.charAt(0) == 'K') {
+				String reply = getReply();
+				if (reply.length() >= 3 && reply.charAt(0) == 'K') {
 					int id = Integer.valueOf(reply.substring(1));
 					if (wolf == id) {
 						success = true;
 					}
 				}
-			} catch (InterruptedException ie) {
+			} catch (TimeoutException ie) {
+				endProcess();
 				System.out.printf("%d failed to initialize, timeout\n", wolf);
 			} catch (Exception e) {
+				endProcess();
 				System.out.printf("%d failed to initialize, %s\n", e.getMessage());
 			}
-			timeout.clearInterrupt();
-			timeout.notify();
 			return success;
 		}
 
-		public synchronized Attack attack(int wolf, char opponent) {
+		public synchronized Attack fight(int wolf, char opponent) {
 			Attack atk = Attack.SUICIDE;
 			try{
-				WolfTimeout timeout = new WolfTimeout();
-				timeout.setInterrupt(this);
-				timeout.start();
-				String msize = Integer.toString(mapsize);
 				writer.printf("A%02d%c\n", wolf, opponent);
 				writer.flush();
-				String reply = reader.readLine();
-				if (reply.length >= 3) {
+				String reply = getReply();
+				if (reply.length() >= 3) {
 					int id = Integer.valueOf(reply.substring(1));
 					if (wolf == id) {
 						switch(reply.charAt(0)) {
@@ -155,22 +175,19 @@ public class Wolf extends Animal {
 						}
 					}
 				}
-			} catch (InterruptedException ie) {
+			} catch (TimeoutException ie) {
+				endProcess();
 				System.out.printf("%d failed to attack, timeout\n", wolf);
 			} catch (Exception e) {
+				endProcess();
 				System.out.printf("%d failed to attack, %s\n", e.getMessage());
 			}
-			timeout.clearInterrupt();
-			timeout.notify();
 			return atk;
 		}
 
 		public synchronized Move move(int wolf, char[][] map) {
 			Move move = Move.HOLD;
 			try{
-				WolfTimeout timeout = new WolfTimeout();
-				timeout.setInterrupt(this);
-				timeout.start();
 				writer.printf("S%02d", wolf);
 				for (int row=0; row<map.length; row++) {
 					for (int col=0; col<map[row].length; col++) {
@@ -179,8 +196,8 @@ public class Wolf extends Animal {
 				}
 				writer.print("\n");
 				writer.flush();
-				String reply = reader.readLine();
-				if (reply.length >= 3) {
+				String reply = getReply();
+				if (reply.length() >= 3) {
 					int id = Integer.valueOf(reply.substring(1));
 					if (wolf == id) {
 						switch(reply.charAt(0)) {
@@ -202,50 +219,14 @@ public class Wolf extends Animal {
 						}
 					}
 				}
-			} catch (InterruptedException ie) {
+			} catch (TimeoutException ie) {
+				endProcess();
 				System.out.printf("%d failed to initialize, timeout\n", wolf);
 			} catch (Exception e) {
+				endProcess();
 				System.out.printf("%d failed to initialize, %s\n", e.getMessage());
 			}
-			timeout.clearInterrupt();
-			timeout.notify();
-			return success;
+			return move;
 		}
 	}
-
-	static class WolfTimeout extends Thread {
-		long timeout = 1000l;
-		Thread interrupt = null;
-
-		public WolfTimeout(long timeout) {
-			this.timeout = timeout;
-			interrupt = null;
-		}
-
-		public WolfTimeout() {
-			interrupt = null;
-		}
-	
-		public void setInterrupt(Thread interrupt){
-			this.interrupt = interrupt;
-		}
-
-		public void clearInterrupt(){
-			this.interrupt = null;
-		}
-
-		public void run() {
-			if (interrupt == null) return;
-			try{
-				this.wait(timeout);
-				if (interrupt != null) {
-					interrupt.interrupt();
-				}
-			} catch (InterruptedException ie) {
-				return;
-			}
-		}
-	}			
 }
-
-
