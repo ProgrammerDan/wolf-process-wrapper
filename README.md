@@ -5,53 +5,57 @@ This is a simple process wrapper to allow other languages to compete in the [Wol
 
 Specification
 ====
-The protocol will be via STDIN and STDOUT hooks, and is split into initialization, Move, and Attack. In each case communication with your process will be via STDIN, and a reply is necessary from STDOUT. If a reply is not received in 1 second, your process will be assumed to be dead and an exception will be thrown. All characters will be encoded in UTF-8, for consistency. Every input will terminate with a newline character, and your process should terminate every output reply with a newline as well.
+Remote scripts are supported by a simple protocol via STDIN and STDOUT hooks, and is split into initialization, Move, and Attack. 
+In each case communication with your process will be via STDIN, and a reply is necessary from STDOUT. 
+If a reply is not received in 1 second, your process will be assumed to be dead and an exception will be thrown. 
+All characters will be encoded in UTF-8, for consistency. Every input will terminate with a newline character, and your process should terminate every output reply with a newline as well. 
+**WARNING** Be sure to flush your output buffer after every write, to ensure the Java wrapper sees your output. Failure to flush may cause your remote Wolf to fail.
 
 Note that only a single process will be created, all Wolves must be managed within that one process. Read on for how this spec will help.
 
 ###Initialization
 
-**STDIN**: `S<id>`\n
+**STDIN:** `S<id>`\n
 
-**STDOUT**: `K<id>`\n
+**STDOUT:** `K<id>`\n
 
-**`<id>`**: `00` or `01` or ... or `99`
+**`<id>`:** `00` or `01` or ... or `99`
 
 ####Explanation:
 
 The character `S` will be sent followed by two numeric characters `00`, `01`, ..., `99` indicating which of the 100 wolves is being initialized. In all future communication with that specific wolf, the same `<id>` will be used.
 
-To ensure your process is alive, you must reply with the character `K` followed by the same `<id>` you received. Any other reply will result in an exception, killing your wolf.
+To ensure your process is alive, you must reply with the character `K` followed by the same `<id>` you received. Any other reply will result in an exception, killing your wolves.
 
 ###Movement
 
-**STDIN**: `M<id><C0><C1>...<C7><C8>`\n
+**STDIN:** `M<id><C0><C1>...<C7><C8>`\n
 
-**STDOUT**: `<mv><id>`\n
+**STDOUT:** `<mv><id>`\n
 
-**`<Cn>`**: `W` or ` ` or `B` or `S` or `L`
+**`<Cn>`:** `W` or ` ` or `B` or `S` or `L`
 
-**`W`**: Wolf
+**`W`:** Wolf
 
-**` `**: Empty Space
+` `**:** Empty Space
 
-**`B`**: Bear
+**`B`:** Bear
 
-**`S`**: Stone
+**`S`:** Stone
 
-**`L`**: Lion
+**`L`:** Lion
 
-**`<mv>`**: `H` or `U` or `L` or `R` or `D`
+**`<mv>`:** `H` or `U` or `L` or `R` or `D`
 
-**`H`**: Move.HOLD
+**`H`:** Move.HOLD
 
-**`U`**: Move.UP
+**`U`:** Move.UP
 
-**`L`**: Move.LEFT
+**`L`:** Move.LEFT
 
-**`R`**: Move.RIGHT
+**`R`:** Move.RIGHT
 
-**`D`**: Move.DOWN
+**`D`:** Move.DOWN
 
 ####Explanation:
 
@@ -61,21 +65,21 @@ Reply with one of the valid movement characters `<mv>`, followed by the Wolf's t
 
 ###Attack
 
-**STDIN**: `A<id><C>`\n
+**STDIN:** `A<id><C>`\n
 
-**STDOUT**: `<atk><id>`\n
+**STDOUT:** `<atk><id>`\n
 
-**`<C>`**: `W` or `B` or `S` or `L`
+**`<C>`:** `W` or `B` or `S` or `L`
 
-**`<atk>`**: `R` or `P` or `S` or `D`
+**`<atk>`:** `R` or `P` or `S` or `D`
 
-**`R`**: Attack.ROCK
+**`R`:** Attack.ROCK
 
-**`P`**: Attack.PAPER
+**`P`:** Attack.PAPER
 
-**`S`**: Attack.SCISSORS
+**`S`:** Attack.SCISSORS
 
-**`D`**: Attack.SUICIDE
+**`D`:** Attack.SUICIDE
 
 ####Explanation:
 
@@ -88,19 +92,17 @@ And that's it. There's no more to it. If you lose an attack, that `<id>` will ne
 Conclusion
 ====
 
-Note that any exceptions will kill all the Wolves of your remote type, as only a simple "Process" is constructed of your remote wolf, for all wolves of your type that get created.
+Note that any exceptions will kill all the Wolves of your remote type, as only a single "Process" is constructed of your remote wolf, for all wolves of your type that get created.
 
 In this repository you'll find the `Wolf.java` file. Search and replace the following strings to set up your bot:
 
-Replace `<invocation>` with the command line argument that will properly execute your process.
+* Replace `<invocation>` with the command line argument that will properly execute your process.
 
-By example, replace `<invocation>` with `Python PythonWolf.py` to execute my Python 3+ example remote wolf.
+* Replace `<custom-name>` with a unique name for your Wolf.
 
-Replace `<custom-name>` with a unique name for your Wolf.
+* For example, I have `WolfRandomPython.java` that invokes my example remote, the `PythonWolf.py`, a Python 3+ Wolf.
 
-For example, I have `WolfRandomPython.java` that invokes my example remote, the `PythonWolf.py`
-
-Rename the file to be `Wolf<custom-name>.java`, where `<custom-name>` is replaced with the name you chose above.
+* Rename the file to be `Wolf<custom-name>.java`, where `<custom-name>` is replaced with the name you chose above.
 
 To test your Wolf, compile the Java program (`javac Wolf<custom-name.java`), and follow Rusher's instructions to include it in the simulation program. Be sure to provide _clear_, _concise_ instructions on how to compile/execute your actual Wolf, which follows the scheme I've outlined above.
 
